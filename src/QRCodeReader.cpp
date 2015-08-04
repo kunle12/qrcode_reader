@@ -54,9 +54,9 @@ void QRCodeReader::init()
     imgPub_ = imgTrans_.advertise( "/qrcode_reader/debug_view", 1 );
   }
 
-  outputPub_ = priImgNode_.advertise<pyride_pr2::NodeStatus>( "/pyride_pr2/node_status", 1 );
-
-  this->startDetection();
+  outputPub_ = priImgNode_.advertise<pyride_pr2::NodeStatus>( "/pyride_pr2/node_status", 1,
+      boost::bind( &QRCodeReader::startDetection, this ),
+      boost::bind( &QRCodeReader::stopDetection, this) );
 }
 
 void QRCodeReader::fini()
@@ -92,9 +92,14 @@ void QRCodeReader::doDetection()
         catch (cv_bridge::Exception & e) {
           ROS_ERROR( "Unable to convert image message to mat." );
           imgMsgPtr_.reset();
+          usleep( 500 );
           continue;
         }
         imgMsgPtr_.reset();
+      }
+      else {
+        usleep( 1000 );
+        continue;
       }
     }
     zbar::Image zbar_image( cv_ptr->image.cols, cv_ptr->image.rows, "Y800",
@@ -163,7 +168,7 @@ void QRCodeReader::startDetection()
 
   qr_detect_thread_ = new boost::thread( &QRCodeReader::doDetection, this );
 
-  ROS_INFO( "Starting QR code reader service." );
+  ROS_INFO( "Starting QR code detection." );
 }
 
 void QRCodeReader::stopDetection()
@@ -181,7 +186,7 @@ void QRCodeReader::stopDetection()
 
   imgSub_.shutdown();
 
-  ROS_INFO( "Stopping QR code reader service." );
+  ROS_INFO( "Stopping QR code detection." );
 }
 
 } // namespace qrcode_reader
