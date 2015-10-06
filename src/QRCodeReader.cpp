@@ -29,7 +29,7 @@ static const string kDefaultDevice = "/wide_stereo/right/image_rect_color";
 QRCodeReader::QRCodeReader() :
   imgTrans_( priImgNode_ ),
   procThread_( NULL ),
-  doDetection_( false ),
+  srvRequests_( 0 ),
   showResult_( false )
 {
   priImgNode_.setCallbackQueue( &imgQueue_ );
@@ -81,7 +81,7 @@ void QRCodeReader::doDetection()
   ros::Time ts;
   cv_bridge::CvImagePtr cv_ptr;
 
-  while (doDetection_) {
+  while (srvRequests_) {
     {
       boost::mutex::scoped_lock lock( mutex_ );
       if (imgMsgPtr_.get()) {
@@ -139,29 +139,12 @@ void QRCodeReader::processingRawImages( const sensor_msgs::ImageConstPtr& msg )
   imgMsgPtr_ = msg;
 }
 
-/*
-bool QRCodeReader::enableHDTService( pr2ht::DetectTrackControl::Request &req,
-                      pr2ht::DetectTrackControl::Response &res )
-{
-  if (req.tostart) {
-    this->startDetection();
-  }
-  else {
-    this->stopDetection();
-  }
-  res.ret = true;
-  return true;
-}
-*/
-
 void QRCodeReader::startDetection()
 {
-  if (doDetection_) {
-    ROS_INFO( "QR code reader service has already started!" );
+  srvRequests_ ++;
+  if (srvRequests_ != 1) {
     return;
   }
-
-  doDetection_ = true;
   
   imgSub_ = imgTrans_.subscribe( cameraDevice_, 1,
                                   &QRCodeReader::processingRawImages, this );
@@ -173,10 +156,9 @@ void QRCodeReader::startDetection()
 
 void QRCodeReader::stopDetection()
 {
-  if (!doDetection_)
+  srvRequests_--;
+  if (srvRequests_ > 0)
     return;
-
-  doDetection_ = false;
  
   if (qr_detect_thread_) {
     qr_detect_thread_->join();

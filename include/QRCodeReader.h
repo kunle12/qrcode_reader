@@ -45,7 +45,8 @@ private:
   
   Publisher outputPub_;
 
-  bool doDetection_;
+  int srvRequests_;
+
   bool showResult_;
 
   boost::mutex mutex_;
