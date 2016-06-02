@@ -15,7 +15,7 @@
 #include <boost/foreach.hpp>
 #include <boost/thread/thread.hpp>
 
-#include "pyride_pr2/NodeStatus.h"
+#include <pyride_common_msgs/NodeStatus.h>
 #include "QRCodeReader.h"
 
 namespace qrcode_reader {
@@ -54,7 +54,7 @@ void QRCodeReader::init()
     imgPub_ = imgTrans_.advertise( "/qrcode_reader/debug_view", 1 );
   }
 
-  outputPub_ = priImgNode_.advertise<pyride_pr2::NodeStatus>( "/pyride_pr2/node_status", 1,
+  outputPub_ = priImgNode_.advertise<pyride_common_msgs::NodeStatus>( "/pyride/node_status", 1,
       boost::bind( &QRCodeReader::startDetection, this ),
       boost::bind( &QRCodeReader::stopDetection, this) );
 }
@@ -119,7 +119,7 @@ void QRCodeReader::doDetection()
         ROS_INFO( "got bar code %s.", barcode.c_str() );
         ss << barcode << ";";
       }
-      pyride_pr2::NodeStatus msg;
+      pyride_common_msgs::NodeStatus msg;
       msg.header.stamp = ros::Time::now();
       msg.priority = 2;
       msg.for_console = false;

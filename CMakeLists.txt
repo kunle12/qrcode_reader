@@ -8,8 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   roscpp
+  pyride_common_msgs
   std_msgs
-  pyride_pr2
 )
 
 ## System dependencies are found with CMake's conventions
@@ -114,6 +114,7 @@ add_executable(qrcode_reader
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(qrcode_reader_node qrcode_reader_generate_messages_cpp)
+add_dependencies(qrcode_reader ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(qrcode_reader
