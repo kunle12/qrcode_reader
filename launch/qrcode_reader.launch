@@ -1,6 +1,6 @@
 <launch>
   <node pkg="qrcode_reader" type="qrcode_reader" name="qrcode_reader" output="screen">
-    <param name="camera" type="str" value="/wide_stereo/right/image_rect_color"/>
+    <param name="camera" type="str" value="/stereo/left/image"/>
     <!-- // for debugging
     <param name="camera" type="str" value="/usb_cam/image_raw"/>
     -->
