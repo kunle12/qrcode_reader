@@ -6,6 +6,7 @@
 //  Copyright (c) 2013 Xun Wang. All rights reserved.
 //
 
+#include <stdlib.h>
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
