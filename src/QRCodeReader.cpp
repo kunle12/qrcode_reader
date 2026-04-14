@@ -66,6 +66,8 @@ void QRCodeReader::fini()
 {
   this->stopDetection();
   imgSub_.shutdown();
+  imgPub_.shutdown();
+  imgTrans_.reset();
 }
 
 void QRCodeReader::doDetection()
