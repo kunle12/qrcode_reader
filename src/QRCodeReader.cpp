@@ -65,7 +65,6 @@ void QRCodeReader::init()
 void QRCodeReader::fini()
 {
   this->stopDetection();
-  imgSub_.shutdown();
   imgPub_.shutdown();
   imgTrans_.reset();
 }
@@ -159,6 +158,8 @@ void QRCodeReader::startDetection()
 
 void QRCodeReader::stopDetection()
 {
+  RCLCPP_INFO( this->get_logger(), "Stopping QR code detection." );
+
   std::unique_lock<std::mutex> lock( mutex_ );
   if (!qrDetectTimer_) {
     return;
@@ -168,8 +169,6 @@ void QRCodeReader::stopDetection()
   qrDetectTimer_ = nullptr;
 
   imgSub_.shutdown();
-
-  RCLCPP_INFO( this->get_logger(), "Stopping QR code detection." );
 }
 
 void QRCodeReader::updateDetectionState()
