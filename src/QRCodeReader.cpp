@@ -25,7 +25,8 @@ static const int kDetectionRateMs = 100;
 QRCodeReader::QRCodeReader()
   : Node( "qrcode_reader" ),
     imgTrans_( shared_from_this() ),
-    showResult_( false )
+    showResult_( false ),
+    debugSubscriberCount_( 0 )
 {
   zbarScanner_.set_config(zbar::ZBAR_NONE, zbar::ZBAR_CFG_ENABLE, 1);
   rclcpp::on_shutdown( [this]() { this->fini(); } );
@@ -47,19 +48,17 @@ void QRCodeReader::init()
     imgPub_ = imgTrans_.advertise( "/qrcode_reader/debug_view", 1 );
   }
 
-  rclcpp::PublisherOptions publisher_options;
-  publisher_options.event_callbacks.matched_callback =
+  rclcpp::PublisherOptions statusPub_options;
+  statusPub_options.event_callbacks.matched_callback =
     [this]( const rmw_matched_status_t & status ) {
-      RCLCPP_INFO( this->get_logger(), "Subscriber event! Current count: %zu",
-                   status.current_count );
-      if (status.current_count > 0) {
-        startDetection();
-      } else {
-        stopDetection();
-      }
+      statusSubscriberCount_.store( status.current_count );
+      debugSubscriberCount_.store( imgPub_.getNumSubscribers() );
+      RCLCPP_INFO( this->get_logger(), "Subscriber event! Status: %zu, Debug: %zu",
+                   status.current_count, imgPub_.getNumSubscribers() );
+      this->updateDetectionState();
     };
 
-  status_pub_ = this->create_publisher<pyride_common_msgs::msg::NodeStatus>( "/pyride/node_status", 1, publisher_options );
+  status_pub_ = this->create_publisher<pyride_common_msgs::msg::NodeStatus>( "/pyride/node_status", 1, statusPub_options );
 }
 
 void QRCodeReader::fini()
@@ -71,12 +70,14 @@ void QRCodeReader::fini()
 void QRCodeReader::doDetection()
 {
   cv_bridge::CvImagePtr cv_ptr;
+  sensor_msgs::msg::Image::ConstSharedPtr localImgMsg;
 
   {
     std::unique_lock<std::mutex> lock( mutex_ );
     if (!imgMsgPtr_) {
       return;
     }
+    localImgMsg = imgMsgPtr_;
     try {
       cv_ptr = cv_bridge::toCvCopy( imgMsgPtr_, "mono8" );
     }
@@ -109,6 +110,23 @@ void QRCodeReader::doDetection()
     msg.node_id = "qrcode_reader";
     msg.status_text = ss.str();
     status_pub_->publish( msg );
+
+    if (imgPub_.getNumSubscribers() > 0) {
+      cv_bridge::CvImagePtr annotated_ptr;
+      try {
+        annotated_ptr = cv_bridge::toCvCopy( localImgMsg, "bgr8" );
+      }
+      catch (cv_bridge::Exception & e) {
+        return;
+      }
+      std::string text = ss.str();
+      int baseline = 0;
+      cv::Size textSize = cv::getTextSize( text, cv::FONT_HERSHEY_SIMPLEX, 1.0, 2, &baseline );
+      cv::Point textOrg( (annotated_ptr->image.cols - textSize.width) / 2, textSize.height + 10 );
+      cv::putText( annotated_ptr->image, text, textOrg, cv::FONT_HERSHEY_SIMPLEX, 1.0,
+                   cv::Scalar( 0, 255, 0 ), 2 );
+      imgPub_.publish( annotated_ptr->toImageMsg() );
+    }
   }
 }
 
@@ -149,6 +167,17 @@ void QRCodeReader::stopDetection()
   imgSub_.shutdown();
 
   RCLCPP_INFO( this->get_logger(), "Stopping QR code detection." );
+}
+
+void QRCodeReader::updateDetectionState()
+{
+  size_t totalSubscribers = statusSubscriberCount_.load() + debugSubscriberCount_.load();
+  if (totalSubscribers > 0) {
+    this->startDetection();
+  }
+  else {
+    this->stopDetection();
+  }
 }
 
 } // namespace qrcode_reader

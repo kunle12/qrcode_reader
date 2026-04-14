@@ -9,6 +9,7 @@
 #ifndef QRCODE_READER_H
 #define QRCODE_READER_H
 
+#include <atomic>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -42,6 +43,9 @@ private:
 
   bool showResult_;
 
+  std::atomic<size_t> statusSubscriberCount_;
+  std::atomic<size_t> debugSubscriberCount_;
+
   std::mutex mutex_;
 
   rclcpp::TimerBase::SharedPtr qrDetectTimer_;
@@ -56,6 +60,7 @@ private:
 
   void startDetection();
   void stopDetection();
+  void updateDetectionState();
 
   void doDetection();
 };
