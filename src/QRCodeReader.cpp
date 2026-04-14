@@ -24,7 +24,6 @@ static const int kDetectionRateMs = 100;
 
 QRCodeReader::QRCodeReader()
   : Node( "qrcode_reader" ),
-    imgTrans_( shared_from_this() ),
     showResult_( false ),
     debugSubscriberCount_( 0 )
 {
@@ -38,6 +37,8 @@ QRCodeReader::~QRCodeReader()
 
 void QRCodeReader::init()
 {
+  imgTrans_ = std::make_unique<image_transport::ImageTransport>( shared_from_this() );
+
   this->declare_parameter<std::string>( "camera", kDefaultDevice );
   this->declare_parameter<bool>( "debug_img", false );
 
@@ -45,7 +46,7 @@ void QRCodeReader::init()
   this->get_parameter( "debug_img", showResult_ );
 
   if (showResult_) {
-    imgPub_ = imgTrans_.advertise( "/qrcode_reader/debug_view", 1 );
+    imgPub_ = imgTrans_->advertise( "/qrcode_reader/debug_view", 1 );
   }
 
   rclcpp::PublisherOptions statusPub_options;
@@ -144,7 +145,7 @@ void QRCodeReader::startDetection()
     return;
   }
 
-  imgSub_ = imgTrans_.subscribe( cameraDevice_, 1,
+  imgSub_ = imgTrans_->subscribe( cameraDevice_, 1,
                                   &QRCodeReader::processingRawImages, this );
 
   qrDetectTimer_ = this->create_wall_timer(

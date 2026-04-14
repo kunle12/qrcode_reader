@@ -35,7 +35,7 @@ public:
   void fini();
 
 private:
-  image_transport::ImageTransport imgTrans_;
+  std::unique_ptr<image_transport::ImageTransport> imgTrans_;
   image_transport::Publisher imgPub_;
   image_transport::Subscriber imgSub_;
 

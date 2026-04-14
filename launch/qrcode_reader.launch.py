@@ -15,7 +15,7 @@ def generate_launch_description():
             executable='qrcode_reader',
             output='screen',
             parameters=[ {
-                'camera': '/stereo/left/image',
+                'camera': '/image_raw',
                 'debug_img': True,
             }]
         ),
