@@ -6,22 +6,24 @@
 //  Copyright (c) 2015 Xun Wang. All rights reserved.
 //
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include "QRCodeReader.h"
 
 using namespace qrcode_reader;
 
 int main( int argc, char* argv[] )
 {
-  ros::init( argc, argv, "qrcode_reader" );
+  rclcpp::init( argc, argv );
   
-  QRCodeReader qrReader;
+  auto qrReader = std::make_shared<QRCodeReader>();
   
-  qrReader.init();
+  qrReader->init();
   
-  qrReader.continueProcessing();
+  rclcpp::spin( qrReader );
   
-  qrReader.fini();
-
+  qrReader->fini();
+  
+  rclcpp::shutdown();
+  
   return 0;
 }
