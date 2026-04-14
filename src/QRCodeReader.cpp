@@ -93,9 +93,9 @@ void QRCodeReader::doDetection()
   zbarScanner_.scan( zbar_image );
 
   zbar::SymbolSet symbols = zbarScanner_.get_results();
-  if (symbols.get_size() > 0) {
-    std::stringstream ss;
+  std::stringstream ss;
 
+  if (symbols.get_size() > 0) {
     for (zbar::SymbolIterator symbol = symbols.symbol_begin();
          symbol != symbols.symbol_end(); ++symbol)
     {
@@ -110,23 +110,23 @@ void QRCodeReader::doDetection()
     msg.node_id = "qrcode_reader";
     msg.status_text = ss.str();
     status_pub_->publish( msg );
+  }
 
-    if (imgPub_.getNumSubscribers() > 0) {
-      cv_bridge::CvImagePtr annotated_ptr;
-      try {
-        annotated_ptr = cv_bridge::toCvCopy( localImgMsg, "bgr8" );
-      }
-      catch (cv_bridge::Exception & e) {
-        return;
-      }
-      std::string text = ss.str();
-      int baseline = 0;
-      cv::Size textSize = cv::getTextSize( text, cv::FONT_HERSHEY_SIMPLEX, 1.0, 2, &baseline );
-      cv::Point textOrg( (annotated_ptr->image.cols - textSize.width) / 2, textSize.height + 10 );
-      cv::putText( annotated_ptr->image, text, textOrg, cv::FONT_HERSHEY_SIMPLEX, 1.0,
-                   cv::Scalar( 0, 255, 0 ), 2 );
-      imgPub_.publish( annotated_ptr->toImageMsg() );
+  if (imgPub_.getNumSubscribers() > 0) {
+    cv_bridge::CvImagePtr annotated_ptr;
+    try {
+      annotated_ptr = cv_bridge::toCvCopy( localImgMsg, "bgr8" );
     }
+    catch (cv_bridge::Exception & e) {
+      return;
+    }
+    std::string text = (symbols.get_size() > 0) ? ss.str() : "No QR code detected";
+    int baseline = 0;
+    cv::Size textSize = cv::getTextSize( text, cv::FONT_HERSHEY_SIMPLEX, 1.0, 2, &baseline );
+    cv::Point textOrg( (annotated_ptr->image.cols - textSize.width) / 2, textSize.height + 10 );
+    cv::putText( annotated_ptr->image, text, textOrg, cv::FONT_HERSHEY_SIMPLEX, 1.0,
+                 cv::Scalar( 0, 255, 0 ), 2 );
+    imgPub_.publish( annotated_ptr->toImageMsg() );
   }
 }
 
