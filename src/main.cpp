@@ -21,8 +21,6 @@ int main( int argc, char* argv[] )
   
   rclcpp::spin( qrReader );
   
-  qrReader->fini();
-  
   rclcpp::shutdown();
   
   return 0;
